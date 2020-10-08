@@ -75,7 +75,7 @@ namespace Nml.Improve.Me
         
         private string GetViewByState(Application application, string baseUri)
         {
-            var view=""
+            var view="";
             switch (application.State)
                {
                     case ApplicationState.Pending:
@@ -98,7 +98,7 @@ namespace Nml.Improve.Me
               return view;
         }
                 
-        private byte[] GeneratePDF(string View)
+        private byte[] GeneratePDF(string view)
         {
             var pdfOptions = new PdfOptions
                 {
