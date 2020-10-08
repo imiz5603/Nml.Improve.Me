@@ -22,13 +22,13 @@ namespace Nml.Improve.Me
             IPdfGenerator pdfGenerator,
             ILogger<PdfApplicationDocumentGenerator> logger)
         {
-            if (dataContext != null)
-                throw new ArgumentNullException(nameof(dataContext));
-
-            _dataContext = dataContext ?? throw new ArgumentNullException("dataContext");
-            _templatePathProvider = templatePathProvider ?? throw new ArgumentNullException("templatePathProvider");
-            _viewGenerator = viewGenerator ?? throw new ArgumentNullException("viewGenerator");
-            _configuration = configuration ?? throw new ArgumentNullException("configuration");
+        //removed questionable null check
+        
+            //Change for consistency
+            _dataContext = dataContext ?? throw new ArgumentNullException(nameof(dataContext));
+            _templatePathProvider = templatePathProvider ?? throw new ArgumentNullException(nameof(templatePathProvider));
+            _viewGenerator = viewGenerator ?? throw new ArgumentNullException(nameof(viewGenerator));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _pdfGenerator = pdfGenerator ?? throw new ArgumentNullException(nameof(pdfGenerator));
         }
@@ -50,9 +50,34 @@ namespace Nml.Improve.Me
                 //Do NULL check on PERSON object and throw exception
                 if (application.Person == null)
                     throw new ArgumentNullException("Person");
-
-                switch (application.State)
+                
+                //view retrieved by method
+                view = GetViewByState(application,baseUri)
+                //seperate for readability
+                if(view != null)
                 {
+                    return GeneratePDF(view);
+                }
+                else {
+                    return null;
+                }
+            }
+            else
+            {
+
+                _logger.LogWarning(
+                    $"No application found for id '{applicationId}'");
+                return null;
+                //throw new NoApplicationFoundException($"No application found for id '{applicationId}'");
+                //throw error instead of return null
+            }
+        }
+        
+        private string GetViewByState(Application application, string baseUri)
+        {
+            var view=""
+            switch (application.State)
+               {
                     case ApplicationState.Pending:
                         view = GetPendingApplicationView(application, baseUri);
                         break;
@@ -65,12 +90,17 @@ namespace Nml.Improve.Me
                     default:
                         _logger.LogWarning(
                          $"The application is in state '{application.State}' and no valid document can be generated for it.");
+                         return null;
                         //throw error instead of return null
-                        throw new UnrecognisedApplicationStateException($"The application is in state '{application.State}' and no valid document can be generated for it.");
+                        //throw new UnrecognisedApplicationStateException($"The application is in state '{application.State}' and no valid document can be generated for it.");
 
                 }
-
-                var pdfOptions = new PdfOptions
+              return view;
+        }
+                
+        private byte[] GeneratePDF(string View)
+        {
+            var pdfOptions = new PdfOptions
                 {
                     PageNumbers = PageNumbers.Numeric,
                     HeaderOptions = new HeaderOptions
@@ -81,16 +111,9 @@ namespace Nml.Improve.Me
                 };
                 var pdf = _pdfGenerator.GenerateFromHtml(view, pdfOptions);
                 return pdf.ToBytes();
-            }
-            else
-            {
-
-                _logger.LogWarning(
-                    $"No application found for id '{applicationId}'");
-                throw new NoApplicationFoundException($"No application found for id '{applicationId}'");
-                //throw error instead of return null
-            }
         }
+        
+        
         private static string GetPendingApplicationView(Application application, string baseUri)
         {
             
